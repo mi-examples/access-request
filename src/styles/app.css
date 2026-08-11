@@ -1,0 +1,839 @@
+/*
+ * Metric Insights design system, as plain CSS.
+ *
+ * MI's own front end is React + MUI and its design system lives in
+ * `frontend/src/theme/`: `core/design.ts` holds the palette, type scale,
+ * spacing and shape; `core/mui-components/*.ts` hold the per-component
+ * overrides. This App is not MUI, so those values are restated here. Every
+ * number and colour is taken from that theme rather than eyeballed, and each
+ * block names its source so the two can be reconciled when MI's theme moves.
+ *
+ * TWO RULES FOR EDITING THIS FILE
+ *
+ * 1. **Everything is scoped under `.ar-app`.** The App renders *inside* MI's
+ *    own page — `layouts/index.php` puts it in `.frame > .container-fluid >
+ *    .main-side`, below a fixed navigation bar, with MI's entire stylesheet
+ *    already loaded. An unscoped `body`, `.row`, `.card` or `input` rule here
+ *    would restyle MI's chrome. There are no global selectors below, and the
+ *    design tokens live on `.ar-app` rather than `:root` for the same reason.
+ *
+ * 2. **Colour comes from MI's active brand theme, not from constants.** When
+ *    embedded, MI serves `/auth/theme-vars.css`, which puts the *user's*
+ *    resolved Brand Theme on `:root` as `--theme-*` properties
+ *    (`LoginController::getThemeCssVariables`). MI's own stylesheets read
+ *    those, and so does this one. The hex fallbacks are MI's shipped defaults,
+ *    used when the App runs outside MI's layout and no theme is published.
+ *
+ * The look those rules produce is: dense (12px type, 28px controls, 3px
+ * corners, no shadows), and structured by the underlined section heading
+ * rather than by cards floating on grey.
+ */
+
+.ar-app {
+  /* ---------------------------------------------------------- palette --- */
+  /* Left: MI's published brand-theme variable. Right: the shipped default
+     from theme/core/design.ts, used when running outside MI's layout. */
+  --mi-primary: var(--theme-palette-primary-main, #075b7e);
+  --mi-text: var(--theme-palette-text-primary, #222222);
+  --mi-bg: var(--theme-palette-background-default, #ffffff);
+  --mi-error: var(--theme-palette-error-main, #ac2b2b);
+  --mi-warning: var(--theme-palette-warning-main, #ffb000);
+  --mi-success: var(--theme-palette-success-main, #077e45);
+
+  /* componentSettings.primaryButton / .tab, themed separately by MI. */
+  --mi-primary-btn-bg: var(--theme-component-primary-btn-background, var(--mi-primary));
+  --mi-primary-btn-text: var(--theme-component-primary-btn-color, #ffffff);
+  --mi-tab: var(--theme-component-tab-color, var(--mi-primary));
+
+  /*
+   * MI's workhorse ramp: nearly every surface in the theme is
+   * `alpha(text.primary, x)` or `alpha(primary.main, x)` at one of these
+   * stops. Static values first so the App still renders on a browser without
+   * `color-mix()`; the @supports block below re-derives them from whatever
+   * colour the active theme actually resolved to.
+   */
+  --mi-text-04: rgba(34, 34, 34, 0.04);
+  --mi-text-08: rgba(34, 34, 34, 0.08);
+  --mi-text-16: rgba(34, 34, 34, 0.16);
+  --mi-text-24: rgba(34, 34, 34, 0.24);
+  --mi-text-40: rgba(34, 34, 34, 0.4);
+  --mi-text-64: rgba(34, 34, 34, 0.64);
+  --mi-text-80: rgba(34, 34, 34, 0.8);
+
+  --mi-primary-04: rgba(7, 91, 126, 0.04);
+  --mi-primary-08: rgba(7, 91, 126, 0.08);
+  --mi-primary-24: rgba(7, 91, 126, 0.24);
+  --mi-primary-80: rgba(7, 91, 126, 0.8);
+
+  --mi-error-08: rgba(172, 43, 43, 0.08);
+  --mi-error-24: rgba(172, 43, 43, 0.24);
+  --mi-error-40: rgba(172, 43, 43, 0.4);
+  --mi-warning-08: rgba(255, 176, 0, 0.08);
+  --mi-success-08: rgba(7, 126, 69, 0.08);
+
+  /* globalStylesData.ts → '.color-warn-solid'. The amber wash needs a darker
+     ink than warning.main to stay legible. */
+  --mi-warn-ink: #b54c29;
+
+  --mi-divider: var(--mi-text-08);
+
+  /* ---------------------------------------------- shape and density ----- */
+  /* shape.borderRadius: 3 · size.defaultHeight: 28 · spacing: 8 */
+  --mi-radius: 3px;
+  --mi-control-h: 28px;
+  --mi-space: 8px;
+  --mi-indent-x: 16px;
+
+  /* ------------------------------------------------------ typography ---- */
+  /*
+   * design.ts → font, typography. Inter is not bundled: MI already loads it
+   * (`mui-css-base-line.ts` imports `@fontsource/inter` 400 and 600) and this
+   * App renders inside MI's page, so it inherits the faces. Arial and
+   * Helvetica are MI's own declared fallbacks.
+   */
+  --mi-font: Inter, Arial, Helvetica, sans-serif;
+  --mi-font-mono: 'JetBrains Mono', monospace;
+  --mi-font-size: 12px;
+  --mi-line-height: 1.5;
+  --mi-heading-size: 14px;
+
+  display: block;
+  padding-bottom: calc(var(--mi-space) * 6);
+  font-family: var(--mi-font);
+  font-size: var(--mi-font-size);
+  line-height: var(--mi-line-height);
+  color: var(--mi-text);
+  /* mui-css-base-line.ts */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * Re-derive the ramps from the resolved theme colours, so a Brand Theme with a
+ * different primary (or a dark background) carries through every wash, border
+ * and focus ring instead of only the solid fills.
+ */
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  .ar-app {
+    --mi-text-04: color-mix(in srgb, var(--mi-text) 4%, transparent);
+    --mi-text-08: color-mix(in srgb, var(--mi-text) 8%, transparent);
+    --mi-text-16: color-mix(in srgb, var(--mi-text) 16%, transparent);
+    --mi-text-24: color-mix(in srgb, var(--mi-text) 24%, transparent);
+    --mi-text-40: color-mix(in srgb, var(--mi-text) 40%, transparent);
+    --mi-text-64: color-mix(in srgb, var(--mi-text) 64%, transparent);
+    --mi-text-80: color-mix(in srgb, var(--mi-text) 80%, transparent);
+
+    --mi-primary-04: color-mix(in srgb, var(--mi-primary) 4%, transparent);
+    --mi-primary-08: color-mix(in srgb, var(--mi-primary) 8%, transparent);
+    --mi-primary-24: color-mix(in srgb, var(--mi-primary) 24%, transparent);
+    --mi-primary-80: color-mix(in srgb, var(--mi-primary) 80%, transparent);
+
+    --mi-error-08: color-mix(in srgb, var(--mi-error) 8%, transparent);
+    --mi-error-24: color-mix(in srgb, var(--mi-error) 24%, transparent);
+    --mi-error-40: color-mix(in srgb, var(--mi-error) 40%, transparent);
+    --mi-warning-08: color-mix(in srgb, var(--mi-warning) 8%, transparent);
+    --mi-success-08: color-mix(in srgb, var(--mi-success) 8%, transparent);
+  }
+}
+
+.ar-app *,
+.ar-app *::before,
+.ar-app *::after {
+  box-sizing: border-box;
+}
+
+/*
+ * Section heading — MI's most recognisable element.
+ * `Typography variant="heading"` (mui-typography.ts + design.ts
+ * typography.heading): 14px/600 in the primary colour, over a 1px rule.
+ */
+.ar-app h1,
+.ar-app h2,
+.ar-app h3,
+.ar-app h4 {
+  margin: 0;
+  font-family: var(--mi-font);
+  font-size: var(--mi-heading-size);
+  font-weight: 600;
+  line-height: 1.21;
+  letter-spacing: 0.12px;
+  color: var(--mi-text);
+}
+
+.ar-app .section-title,
+.ar-app .card > h3 {
+  color: var(--mi-primary);
+  border-bottom: 1px solid var(--mi-primary);
+  padding-bottom: 5px;
+  margin-bottom: 12px;
+}
+
+.ar-app p {
+  margin: 0 0 var(--mi-space);
+}
+
+/* globalStylesData.ts → 'a, .default-link' */
+.ar-app a {
+  color: var(--mi-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ar-app a:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------- layout --- */
+
+/*
+ * No page chrome of its own. MI's `layouts/index.php` supplies the fixed 40px
+ * navigation bar and the `.frame` padding that clears it; the App owns only
+ * what sits inside `.main-side`.
+ */
+.ar-app .page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--mi-space);
+  min-height: var(--mi-control-h);
+  margin-bottom: var(--mi-indent-x);
+  padding-bottom: var(--mi-space);
+  border-bottom: 1px solid var(--mi-text-16);
+}
+
+.ar-app .page-header__title {
+  color: var(--mi-text-64);
+  margin-right: auto;
+}
+
+.ar-app .stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mi-indent-x);
+}
+
+.ar-app .row {
+  display: flex;
+  align-items: center;
+  gap: var(--mi-space);
+  flex-wrap: wrap;
+}
+
+.ar-app .row--between {
+  justify-content: space-between;
+}
+
+.ar-app .spacer {
+  flex: 1;
+}
+
+/* -------------------------------------------------------------- panels --- */
+
+/*
+ * MI does not float cards on grey; sections sit on the page and the heading
+ * rule does the separating. `.card` is a quietly bounded region, never a
+ * raised one — `componentSettings.tile.shadow` is deliberately empty.
+ */
+.ar-app .card {
+  background: var(--mi-bg);
+  border: 1px solid var(--mi-divider);
+  border-radius: var(--mi-radius);
+  padding: var(--mi-indent-x);
+}
+
+.ar-app .card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ar-app .card__header {
+  padding: var(--mi-space) var(--mi-indent-x);
+  border-bottom: 1px solid var(--mi-text-16);
+  display: flex;
+  align-items: center;
+  gap: var(--mi-space);
+}
+
+.ar-app .card__body {
+  padding: var(--mi-indent-x);
+}
+
+/* ------------------------------------------------------------ buttons --- */
+
+/*
+ * mui-button.ts: 28px min-height, 80px min-width, 3px radius, `3px 12px`
+ * padding, 12px/400 type, `textTransform: none`, no shadow in any state.
+ * The variants below map to MI's contained / outlined / text.
+ */
+.ar-app .button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--mi-control-h);
+  min-width: 80px;
+  padding: 3px 12px;
+  border: 1px solid var(--mi-text-40);
+  border-radius: var(--mi-radius);
+  background: var(--mi-bg);
+  color: var(--mi-text);
+  font-family: var(--mi-font);
+  font-size: var(--mi-font-size);
+  font-weight: 400;
+  line-height: var(--mi-line-height);
+  text-transform: none;
+  text-decoration: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+/* Outlined neutral — hover washes 4%, active 24%. */
+.ar-app .button:hover:not(:disabled) {
+  background: var(--mi-text-04);
+  border-color: var(--mi-text-24);
+  color: var(--mi-text-80);
+  text-decoration: none;
+}
+
+.ar-app .button:active:not(:disabled) {
+  background: var(--mi-text-24);
+  border-color: var(--mi-text);
+  color: var(--mi-text);
+}
+
+.ar-app .button:disabled,
+.ar-app .button[aria-disabled='true'] {
+  background: transparent;
+  border-color: var(--mi-text-24);
+  color: var(--mi-text-24);
+  cursor: not-allowed;
+}
+
+/*
+ * MI suppresses the focus outline on buttons. Keyboard users still need one,
+ * so this reuses the 2px ring MI puts on a focused input.
+ */
+.ar-app .button:focus-visible {
+  outline: none;
+  border-color: var(--mi-primary);
+  box-shadow: 0 0 0 2px var(--mi-primary-24);
+}
+
+/* Contained primary. */
+.ar-app .button--primary {
+  background: var(--mi-primary-btn-bg);
+  border-color: transparent;
+  color: var(--mi-primary-btn-text);
+}
+
+.ar-app .button--primary:hover:not(:disabled),
+.ar-app .button--primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--mi-primary-btn-bg) 85%, #000);
+  border-color: transparent;
+  color: var(--mi-primary-btn-text);
+}
+
+.ar-app .button--primary:disabled {
+  background: var(--mi-text-24);
+  border-color: transparent;
+  color: var(--mi-bg);
+}
+
+/* Text variant — no border, wash on hover. */
+.ar-app .button--ghost {
+  border-color: transparent;
+  background: transparent;
+}
+
+.ar-app .button--ghost:hover:not(:disabled) {
+  background: var(--mi-primary-04);
+  border-color: transparent;
+  color: var(--mi-primary);
+}
+
+.ar-app .button--ghost:active:not(:disabled) {
+  background: var(--mi-primary-24);
+  border-color: transparent;
+  color: var(--mi-primary);
+}
+
+.ar-app .button--ghost[aria-current='true'] {
+  background: var(--mi-primary-08);
+  color: var(--mi-primary);
+}
+
+/* Text variant, error colour. */
+.ar-app .button--danger {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mi-error);
+}
+
+.ar-app .button--danger:hover:not(:disabled) {
+  background: var(--mi-error-08);
+  border-color: transparent;
+  color: var(--mi-error);
+}
+
+.ar-app .button--small {
+  min-height: 22px;
+  min-width: auto;
+  padding: 1px 8px;
+}
+
+/* -------------------------------------------------------------- badges --- */
+
+/*
+ * `Typography variant="label"` (mui-typography.ts) and mui-chip.ts share one
+ * idea: an 8% wash of the colour with the text in that colour, 3px radius.
+ */
+.ar-app .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--mi-radius);
+  padding: 1px 6px;
+  font-size: var(--mi-font-size);
+  line-height: var(--mi-line-height);
+  background: var(--mi-text-08);
+  color: var(--mi-text);
+  white-space: nowrap;
+}
+
+.ar-app .badge--locked {
+  background: var(--mi-primary-08);
+  color: var(--mi-primary);
+}
+
+.ar-app .badge--certified,
+.ar-app .badge--tier1 {
+  background: var(--mi-success-08);
+  color: var(--mi-success);
+}
+
+.ar-app .badge--tier2 {
+  background: var(--mi-warning-08);
+  color: var(--mi-warn-ink);
+}
+
+.ar-app .badge--tier3 {
+  background: var(--mi-error-08);
+  color: var(--mi-error);
+}
+
+/* --------------------------------------------------------------- forms --- */
+
+.ar-app .field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* mui-input-label.ts: a static label 4px above the control. */
+.ar-app .field__label {
+  font-weight: 400;
+  color: var(--mi-text);
+  margin-bottom: 4px;
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.ar-app .field__required {
+  color: var(--mi-error);
+}
+
+/* mui-form-helper-text.ts: italic 12px at 64% */
+.ar-app .field__help {
+  color: var(--mi-text-64);
+  font-style: italic;
+  margin-bottom: 4px;
+  white-space: pre-line;
+}
+
+.ar-app .field__error {
+  color: var(--mi-error);
+  margin-top: 4px;
+}
+
+.ar-app .field__prefilled {
+  color: var(--mi-text-64);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/*
+ * mui-input.ts. A 26px inner control inside a 1px border gives the 28px
+ * standard height. Note MI renders the input *value* in the primary colour
+ * rather than the body colour — a small thing that reads as distinctly MI.
+ */
+.ar-app input[type='text'],
+.ar-app input[type='email'],
+.ar-app input[type='date'],
+.ar-app input[type='search'],
+.ar-app textarea,
+.ar-app select {
+  width: 100%;
+  height: var(--mi-control-h);
+  padding: 0 12px;
+  border: 1px solid var(--mi-text-40);
+  border-radius: var(--mi-radius);
+  background: var(--mi-bg);
+  color: var(--mi-primary);
+  font-family: var(--mi-font);
+  font-size: var(--mi-font-size);
+  line-height: var(--mi-line-height);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.ar-app textarea {
+  height: auto;
+  /* mui-input.ts defaults multiline to `minRows: 3`; three 18px lines plus the
+     6px vertical padding and 1px borders. Sized so it never clips a part-line. */
+  min-height: 68px;
+  padding: 6px 12px;
+  resize: vertical;
+}
+
+.ar-app select {
+  appearance: none;
+  padding-right: 28px;
+  /* MI's dropdown chevron, drawn rather than shipped as an asset. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23222222' stroke-opacity='.64' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.ar-app input::placeholder,
+.ar-app textarea::placeholder {
+  color: var(--mi-text-64);
+  opacity: 1;
+}
+
+.ar-app input:hover:not(:disabled),
+.ar-app textarea:hover:not(:disabled),
+.ar-app select:hover:not(:disabled) {
+  border-color: var(--mi-primary-80);
+}
+
+.ar-app input:focus,
+.ar-app textarea:focus,
+.ar-app select:focus {
+  outline: none;
+  border-color: var(--mi-primary);
+  box-shadow: 0 0 0 2px var(--mi-primary-24);
+}
+
+/* MI hides the placeholder on focus. */
+.ar-app input:focus::placeholder,
+.ar-app textarea:focus::placeholder {
+  opacity: 0;
+}
+
+.ar-app .field--invalid input,
+.ar-app .field--invalid textarea,
+.ar-app .field--invalid select {
+  border-color: var(--mi-error-40);
+  color: var(--mi-error);
+}
+
+.ar-app .field--invalid input:hover,
+.ar-app .field--invalid textarea:hover,
+.ar-app .field--invalid select:hover {
+  border-color: var(--mi-error);
+}
+
+.ar-app .field--invalid input:focus,
+.ar-app .field--invalid textarea:focus,
+.ar-app .field--invalid select:focus {
+  border-color: var(--mi-error);
+  box-shadow: 0 0 0 2px var(--mi-error-24);
+}
+
+/*
+ * mui-checkbox.ts: a 16px box with a 3px radius and a 40% border when
+ * unchecked; when checked, a filled rounded square with a tick, shipped by MI
+ * as an inline SVG. That exact SVG is reused here so the mark is identical
+ * rather than merely similar. It carries MI's default primary, so a re-themed
+ * instance keeps the default tick colour — the one place in this file the
+ * theme variable cannot reach.
+ */
+.ar-app .checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--mi-text-40);
+  border-radius: var(--mi-radius);
+  padding: 6px 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--mi-bg);
+}
+
+.ar-app .checklist label {
+  display: flex;
+  gap: var(--mi-space);
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.ar-app .checklist label:hover {
+  color: var(--mi-primary);
+}
+
+.ar-app input[type='checkbox'] {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  border: 1px solid var(--mi-text-40);
+  border-radius: var(--mi-radius);
+  background: var(--mi-bg);
+  cursor: pointer;
+}
+
+.ar-app input[type='checkbox']:checked {
+  border-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='%23075B7E' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M13 0C14.6569 0 16 1.34315 16 3V13C16 14.6569 14.6569 16 13 16H3C1.34315 16 0 14.6569 0 13V3C0 1.34315 1.34315 0 3 0H13ZM11.9805 4.94043C11.793 4.75319 11.4891 4.75307 11.3018 4.94043L6.7998 9.44238L4.69824 7.34082C4.5108 7.15336 4.20698 7.15336 4.01953 7.34082L3.34082 8.01953C3.15338 8.20699 3.15338 8.5108 3.34082 8.69824L6.46094 11.8184C6.6484 12.0056 6.95225 12.0057 7.13965 11.8184L12.6592 6.29785C12.8466 6.11039 12.8466 5.80658 12.6592 5.61914L11.9805 4.94043Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.ar-app input[type='checkbox']:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--mi-primary-24);
+}
+
+/* ------------------------------------------------------- asset detail --- */
+
+.ar-app .detail {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--mi-indent-x);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  /* breakpoints.md */
+  .ar-app .detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ar-app .detail__preview {
+  width: 100%;
+  border-radius: var(--mi-radius);
+  border: 1px solid var(--mi-text-24);
+  display: block;
+}
+
+.ar-app .definition-list {
+  display: grid;
+  grid-template-columns: minmax(110px, max-content) 1fr;
+  gap: 4px var(--mi-indent-x);
+  margin: 0;
+}
+
+.ar-app .definition-list dt {
+  color: var(--mi-text-64);
+}
+
+.ar-app .definition-list dd {
+  margin: 0;
+}
+
+.ar-app .access-denied-message {
+  background: var(--mi-text-04);
+  border-left: 2px solid var(--mi-primary);
+  padding: var(--mi-space) 12px;
+}
+
+.ar-app .access-denied-message > :last-child {
+  margin-bottom: 0;
+}
+
+/* -------------------------------------------------------------- tabs --- */
+
+/*
+ * The questionnaire's step list is styled as MI Tabs (mui-tabs.ts /
+ * mui-tab.ts): an indicator under the selected item, an 8% wash behind it,
+ * and the tab colour on the label. MI's own tabs are 45px tall; these are
+ * shorter because they sit inside a form rather than at a page edge.
+ */
+.ar-app .stepper {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--mi-text-16);
+}
+
+.ar-app .stepper__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: var(--mi-text);
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+}
+
+.ar-app .stepper__item[data-state='current'] {
+  background: var(--mi-primary-08);
+  border-bottom-color: var(--mi-tab);
+  color: var(--mi-tab);
+}
+
+.ar-app .stepper__item[data-state='done'] {
+  color: var(--mi-text-64);
+}
+
+/* ------------------------------------------------------------ tables --- */
+
+/* mui-table-cell.ts: a single 16% bottom rule, nothing else. */
+.ar-app .table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ar-app .table th,
+.ar-app .table td {
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--mi-text-16);
+  vertical-align: top;
+}
+
+.ar-app .table th {
+  color: var(--mi-text-64);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ar-app .table tbody tr:last-child td,
+.ar-app .table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+/* ---------------------------------------------------------- feedback --- */
+
+/*
+ * mui-alert.ts: `5px 12px` padding, **no** border radius, and an 8% wash of
+ * the severity colour with the text in that colour. Info is the exception —
+ * a 4% wash of text.primary behind normal body text.
+ */
+.ar-app .notice {
+  padding: 5px 12px;
+  border-radius: 0;
+  background: var(--mi-text-04);
+  color: var(--mi-text);
+}
+
+.ar-app .notice--error {
+  background: var(--mi-error-08);
+  color: var(--mi-error);
+}
+
+.ar-app .notice--warn {
+  background: var(--mi-warning-08);
+  color: var(--mi-warn-ink);
+}
+
+.ar-app .notice--ok {
+  background: var(--mi-success-08);
+  color: var(--mi-success);
+}
+
+.ar-app .notice__title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.ar-app .notice > :last-child {
+  margin-bottom: 0;
+}
+
+.ar-app .notice ol,
+.ar-app .notice ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ar-app .empty {
+  text-align: center;
+  color: var(--mi-text-64);
+  padding: calc(var(--mi-space) * 5) var(--mi-indent-x);
+}
+
+.ar-app .empty h3 {
+  color: var(--mi-text);
+  margin-bottom: var(--mi-space);
+}
+
+.ar-app .skeleton {
+  background: linear-gradient(90deg, var(--mi-text-08) 25%, var(--mi-text-04) 37%, var(--mi-text-08) 63%);
+  background-size: 400% 100%;
+  animation: ar-shimmer 1.4s ease infinite;
+  border-radius: var(--mi-radius);
+}
+
+@keyframes ar-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ar-app .skeleton {
+    animation: none;
+  }
+
+  .ar-app * {
+    transition-duration: 1ms !important;
+  }
+}
+
+/* -------------------------------------------------------- utilities --- */
+
+.ar-app .muted {
+  color: var(--mi-text-64);
+}
+
+.ar-app .small {
+  font-size: var(--mi-font-size);
+}
+
+/* globalStylesData.ts → '.font-monospace' */
+.ar-app .mono {
+  font-family: var(--mi-font-mono);
+}
+
+.ar-app .field-group-title {
+  font-weight: 600;
+  color: var(--mi-text-64);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.ar-app .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
